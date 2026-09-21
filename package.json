@@ -1,0 +1,46 @@
+{
+  "name": "datampoy",
+  "productName": "داتام‌پوی",
+  "version": "3.0.0",
+  "description": "داتام‌پوی — پایشگر پیدا کردن پروژه (سازه وافل / تاپ‌داون) در وب‌سایت‌های استان تهران، البرز و مازندران. ایده، تولید و خلق: برهان مهرگان",
+  "main": "main.js",
+  "author": "برهان مهرگان",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win nsis",
+    "pack": "electron-builder --dir"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0",
+    "electron-store": "^8.2.0",
+    "node-schedule": "^2.1.1",
+    "puppeteer": "^23.6.0"
+  },
+  "devDependencies": {
+    "electron": "^31.3.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.datamsazeh.datampoy",
+    "publish": null,
+    "productName": "داتام‌پوی",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "داتام‌پوی"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/**/*",
+      "data/**/*"
+    ]
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "provinces": [
+    "تهران",
+    "البرز",
+    "مازندران"
+  ],
+  "priorityKeywords": {
+    "priority1_waffle": [
+      "وافل",
+      "دال وافل",
+      "سقف وافل",
+      "waffle"
+    ],
+    "priority2_topdown": [
+      "تاپ داون",
+      "تاپ-داون",
+      "top down",
+      "top-down"
+    ],
+    "other": [
+      "محوطه سازی",
+      "پارک سازی",
+      "اجرای جدول",
+      "جدول گذاری",
+      "پیمانکاری عمومی"
+    ]
+  },
+  "tehranMunicipalZones": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22
+  ],
+  "sites": [
+    {
+      "id": "sazejoo",
+      "name": "سازه جو",
+      "baseUrl": "https://sazejoo.com",
+      "requiresLogin": true,
+      "loginNote": "اطلاعات تماس مسئول پروژه پشت اشتراک/عضویت کاربری قرار دارد؛ نیاز به وارد کردن نام کاربری و رمز اشتراک شما در تنظیمات دارد.",
+      "supportsZoneFilter": true,
+      "zoneFilterLabel": "منطقه شهرداری تهران",
+      "scraperModule": "sazejoo.js",
+      "status": "پیش‌نویس - نیاز به بررسی ساختار HTML صفحه پروژه‌ها بعد از ورود. فیلتر منطقه شهرداری در UI اضافه شد؛ اتصال واقعی به فرم سایت هنوز TODO است."
+    },
+    {
+      "id": "setadiran",
+      "name": "ستاد ایران (سامانه تدارکات الکترونیکی دولت)",
+      "baseUrl": "https://setadiran.ir",
+      "requiresLogin": true,
+      "technicalNote": "اپلیکیشن Java/Struts2 با بارگذاری AJAX - اسکرپر با Puppeteer (مرورگر خودکار) نوشته شده، نه axios/cheerio ساده",
+      "resultColumns": [
+        "ردیف",
+        "شماره فراخوان",
+        "عنوان فراخوان",
+        "نوع فراخوان",
+        "استان",
+        "شهر",
+        "دستگاه اجرایی مناقصه‌گزار",
+        "طبقه‌بندی موضوعی",
+        "شرح کلی حوزه فعالیت",
+        "برآورد مالی"
+      ],
+      "searchFormFields": [
+        "نوع فراخوان",
+        "شماره فراخوان",
+        "عنوان فراخوان",
+        "استان محل اجرا",
+        "شهر محل اجرا",
+        "دستگاه اجرایی مناقصه‌گزار",
+        "نوع برگزاری",
+        "طبقه‌بندی موضوعی",
+        "شرح کلی حوزه فعالیت"
+      ],
+      "supportsCityFilter": true,
+      "supportsEmployerFilter": true,
+      "supportsTenderNumberFilter": true,
+      "scraperModule": "setadiran.js",
+      "status": "ستون‌های جدول از اسکرین‌شات واقعی نتایج (نه فرم خالی) تایید شد - ۱۰ ستون. فیلد «شماره فراخوان ستاد ایران» هم اضافه شد (وقتی پر باشد، جستجو فقط با همون شماره انجام می‌شود، چون طبق گفته کاربر این شماره‌ی رسمی و یکتای دولتی است). انتخاب فیلدها هنوز بر اساس متن لیبل است (نه id دقیق) - نیاز به تست نهایی با اجرای واقعی و رفع احتمالی کپچا"
+    },
+    {
+      "id": "irantender",
+      "name": "ایران تندر",
+      "baseUrl": "https://www.etender.ir",
+      "searchPath": "/user.php",
+      "requiresLogin": false,
+      "loginNote": "در نمونه واقعی که کاربر فرستاد، عنوان/کارفرما/تاریخ‌ها بدون سانسور نمایش داده شده بودند (نه پشت لاگین) - هرچند دریافت خود اسناد ممکن است اشتراک بخواهد.",
+      "searchParams": {
+        "section": "tender",
+        "category": "list",
+        "keyword": "‌ (کلیدواژه - مثلا وافل یا تاپ داون)",
+        "catid_construction": 35,
+        "catid_roads": 34,
+        "province[]": "چندگانه - مثلا province[]=5&province[]=8&province[]=27 برای البرز+تهران+مازندران با هم",
+        "orgname": "‌ (نام کارفرما/برگزارکننده - فیلد متنی آزاد در فرم واقعی سایت)",
+        "date": "تاریخ انتشار از - فرمت yyyy-mm-dd شمسی",
+        "date2": "تاریخ انتشار تا - فرمت yyyy-mm-dd شمسی",
+        "rows": 100
+      },
+      "supportsCityFilter": false,
+      "supportsEmployerFilter": true,
+      "scraperModule": "irantender.js",
+      "status": "اسکرپر با نمونه HTML واقعی صفحه نتایج تست شد (۵ از ۵ ردیف درست). لاگین هم اضافه شد (فرم واقعی صفحه ورود که کاربر فرستاد: POST به user.php?section=login با username/pass) تا موارد «قابل نمایش برای مشترکان» هم برای کاربران مشترک باز شود - آدرس دقیق لاگین حدسی است، نیاز به تست واقعی."
+    },
+    {
+      "id": "artaparsian",
+      "name": "آرتا پارسیان مازندران",
+      "baseUrl": "",
+      "requiresLogin": false,
+      "scraperModule": "artaparsian.js",
+      "status": "آدرس دقیق سایت باید توسط کارفرما تایید شود"
+    },
+    {
+      "id": "linkedin",
+      "name": "لینکدین",
+      "baseUrl": "https://www.linkedin.com",
+      "requiresLogin": "optional",
+      "loginNote": "لینکدین اسکرپ خودکار را عملاً مسدود می‌کند؛ فعلاً به‌جای اسکرپر، جستجوی کلیدواژه در مرورگر خودتان باز می‌شود.",
+      "isExternalSearchOnly": true,
+      "scraperModule": null,
+      "status": "پیاده‌سازی به‌صورت باز کردن جستجوی مرورگر (نه اسکرپر خودکار)"
+    },
+    {
+      "id": "instagram",
+      "name": "اینستاگرام",
+      "baseUrl": "https://www.instagram.com",
+      "requiresLogin": "optional",
+      "loginNote": "اینستاگرام هم اسکرپ خودکار بدون لاگین را مسدود می‌کند؛ فعلاً جستجوی هشتگ/کلیدواژه در مرورگر باز می‌شود.",
+      "isExternalSearchOnly": true,
+      "scraperModule": null,
+      "status": "پیاده‌سازی به‌صورت باز کردن جستجوی مرورگر (نه اسکرپر خودکار)"
+    }
+  ]
+}

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<title>داتام‌پوی</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- صفحه قفل امنیتی -->
+  <div id="lockScreen" class="lock-screen">
+    <div class="lock-box">
+      <img src="../../assets/logo.png" class="logo" alt="لوگو" onerror="this.style.display='none'" />
+      <div class="brand-name">داتام‌پوی</div>
+      <div class="brand-sub">طراحی، تولید و خلق: برهان مهرگان</div>
+      <h2 id="lockTitle">کد ایمنی را وارد کنید</h2>
+      <input type="password" id="pinInput" maxlength="12" placeholder="••••" />
+      <button id="pinSubmit">ورود</button>
+      <p id="lockError" class="error"></p>
+    </div>
+  </div>
+
+  <!-- برنامه اصلی -->
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <div class="brand">
+        <img src="../../assets/logo.png" class="logo-small" alt="" onerror="this.style.display='none'" />
+        <span>داتام‌پوی</span>
+      </div>
+    </header>
+
+    <nav class="tabbar">
+      <button class="tab-btn active" data-tab="dashboard">
+        <svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9zm0 7h6v-5H4v5zm10 0h6v-9h-6v9zm0-16v5h6V4h-6z"/></svg>
+        <span>داشبورد</span>
+      </button>
+      <button class="tab-btn" data-tab="stats">
+        <svg viewBox="0 0 24 24"><path d="M4 20h16v2H4v-2zM6 10h3v8H6v-8zm5-6h3v14h-3V4zm5 9h3v5h-3v-5z"/></svg>
+        <span>آمار</span>
+      </button>
+      <button class="tab-btn" data-tab="outreach">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v14l4-4h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>
+        <span>ارتباط با کارفرما</span>
+      </button>
+      <button class="tab-btn" data-tab="settings">
+        <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.94 4a7.99 7.99 0 0 0-.14-1.5l2.11-1.65-2-3.46-2.49 1a8.03 8.03 0 0 0-2.6-1.5L15.5 2h-4l-.32 2.89a8.03 8.03 0 0 0-2.6 1.5l-2.49-1-2 3.46L5.2 10.5a7.99 7.99 0 0 0 0 3l-2.11 1.65 2 3.46 2.49-1c.77.65 1.65 1.16 2.6 1.5L10.5 22h4l.32-2.89c.95-.34 1.83-.85 2.6-1.5l2.49 1 2-3.46-2.11-1.65c.09-.49.14-.99.14-1.5z"/></svg>
+        <span>تنظیمات</span>
+      </button>
+    </nav>
+
+    <main>
+      <!-- داشبورد -->
+      <section id="tab-dashboard" class="tab-content active">
+        <div class="section-head">
+          <h1>پروژه‌های پیدا‌شده</h1>
+        </div>
+
+        <div class="search-card">
+          <h3>جستجوی آزاد و بازه تاریخ</h3>
+          <div class="search-row">
+            <input type="text" id="freeKeyword" placeholder="کلیدواژه یا عبارت دلخواه (اختیاری)" />
+          </div>
+          <div class="date-range-row">
+            <span class="date-label">از تاریخ:</span>
+            <select id="dateFromDay" class="date-select"></select>
+            <select id="dateFromMonth" class="date-select-month"></select>
+            <select id="dateFromYear" class="date-select-year"></select>
+            <span class="date-label">تا تاریخ:</span>
+            <select id="dateToDay" class="date-select"></select>
+            <select id="dateToMonth" class="date-select-month"></select>
+            <select id="dateToYear" class="date-select-year"></select>
+            <button id="dateTodayBtn" class="secondary-btn" type="button">📅 امروز</button>
+          </div>
+        </div>
+
+        <div class="search-card">
+          <h3>منابع جستجو</h3>
+          <div id="sourcesList" class="sources-list"></div>
+          <div class="external-search-row">
+            <button id="linkedinSearchBtn" class="secondary-btn">🔗 جستجوی لینکدین</button>
+            <button id="instagramSearchBtn" class="secondary-btn">📷 جستجوی اینستاگرام</button>
+          </div>
+          <button id="runScanBtn" class="primary-btn" style="margin-top:12px;">🔍 جستجوی همه منابع انتخاب‌شده</button>
+        </div>
+
+        <div class="toolbar">
+          <select id="filterPriority">
+            <option value="all">همه اولویت‌ها</option>
+            <option value="1">اولویت ۱ - سازه وافل</option>
+            <option value="2">اولویت ۲ - تاپ داون</option>
+            <option value="3">اولویت ۳ - سایر</option>
+            <option value="4">جستجوی آزاد</option>
+          </select>
+        </div>
+        <div id="scanLog" class="scan-log hidden"></div>
+        <div id="leadsGrid" class="leads-grid"></div>
+      </section>
+
+      <!-- آمار -->
+      <section id="tab-stats" class="tab-content">
+        <h1>جامعه آماری</h1>
+        <div class="stat-cards" id="statCards"></div>
+        <div class="chart-card">
+          <h3>پروژه‌ها به تفکیک سایت</h3>
+          <div id="chartBySite" class="bar-chart"></div>
+        </div>
+        <div class="chart-card">
+          <h3>پروژه‌ها به تفکیک استان</h3>
+          <div id="chartByProvince" class="bar-chart"></div>
+        </div>
+      </section>
+
+      <!-- ارتباط با کارفرما -->
+      <section id="tab-outreach" class="tab-content">
+        <h1>ارتباط با کارفرما</h1>
+        <div class="outreach-layout">
+          <div class="outreach-list">
+            <h3>یک پروژه را انتخاب کنید</h3>
+            <div id="outreachLeadsList" class="outreach-leads"></div>
+          </div>
+          <div class="outreach-panel">
+            <div class="outreach-card">
+              <div class="outreach-card-head">
+                <img src="../../assets/logo.png" class="outreach-thumb" alt="" onerror="this.style.display='none'" />
+                <div>
+                  <div class="outreach-title">پیام آماده برای کارفرما</div>
+                  <div id="outreachSelectedProject" class="outreach-subtitle">هنوز پروژه‌ای انتخاب نشده</div>
+                </div>
+              </div>
+              <textarea id="outreachMessage" rows="7"></textarea>
+              <div class="outreach-actions">
+                <button id="outreachCopyBtn" class="secondary-btn">📋 کپی متن</button>
+                <button id="outreachWaBtn" class="wa-btn">واتساپ</button>
+                <button id="outreachBaleBtn" class="bale-btn">بله</button>
+              </div>
+              <div class="outreach-links" id="outreachLinksPreview"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- تنظیمات -->
+      <section id="tab-settings" class="tab-content">
+        <h1>تنظیمات</h1>
+
+        <div class="settings-card">
+          <h3>لینک‌های شرکت (برای پیام‌های کارفرما)</h3>
+          <label>وب‌سایت</label>
+          <input type="text" id="settingWebsite" placeholder="https://..." />
+          <label>اینستاگرام</label>
+          <input type="text" id="settingInstagram" placeholder="https://instagram.com/..." />
+          <label>لینکدین</label>
+          <input type="text" id="settingLinkedin" placeholder="https://linkedin.com/..." />
+          <label>کد ملی (فقط برای نمایش جزئی در فوتر - کامل ذخیره و مخفی نمایش داده می‌شود)</label>
+          <input type="text" id="settingNationalId" placeholder="کد ملی ۱۰ رقمی" maxlength="10" />
+          <button id="saveSettingsBtn" class="primary-btn">ذخیره تنظیمات</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>قالب پیش‌فرض پیام کارفرما</h3>
+          <textarea id="messageTemplate" rows="5"></textarea>
+          <button id="saveMessageBtn" class="secondary-btn">ذخیره پیام</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>اطلاعات ورود سازه جو</h3>
+          <input type="text" id="sazejooUser" placeholder="نام کاربری" />
+          <input type="password" id="sazejooPass" placeholder="رمز عبور" />
+          <button id="saveSazejooBtn" class="secondary-btn">ذخیره اطلاعات ورود</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>اطلاعات ورود ستاد ایران</h3>
+          <input type="text" id="setadiranUser" placeholder="نام کاربری" />
+          <input type="password" id="setadiranPass" placeholder="رمز عبور" />
+          <button id="saveSetadiranBtn" class="secondary-btn">ذخیره اطلاعات ورود</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>اطلاعات ورود ایران تندر</h3>
+          <input type="text" id="irantenderUser" placeholder="نام کاربری" />
+          <input type="password" id="irantenderPass" placeholder="رمز عبور" />
+          <button id="saveIrantenderBtn" class="secondary-btn">ذخیره اطلاعات ورود</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>فیلترهای پیشرفته سایت‌ها</h3>
+          <label>منطقه شهرداری تهران (سازه جو)</label>
+          <select id="sazejooZone">
+            <option value="">همه مناطق</option>
+          </select>
+          <label>شهر (ستاد ایران)</label>
+          <input type="text" id="setadiranCity" placeholder="مثلاً تهران" />
+          <label>شماره فراخوان ستاد ایران (اگه از جای دیگه‌ای این شماره رو پیدا کردی)</label>
+          <input type="text" id="setadiranTenderNumber" placeholder="مثلاً 2005003392000026" />
+          <label>نام کارفرما / دستگاه اجرایی (ستاد ایران)</label>
+          <input type="text" id="setadiranEmployer" placeholder="نام کارفرما" />
+          <label>نام کارفرما / برگزارکننده (ایران تندر)</label>
+          <input type="text" id="irantenderEmployer" placeholder="نام کارفرما" />
+          <button id="saveAdvancedFiltersBtn" class="secondary-btn">ذخیره فیلترها</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>حساب‌های شبکه‌های اجتماعی (اختیاری)</h3>
+          <p class="hint-text">فقط در صورتی پر کن که بخوای بعداً ورود خودکار با حساب خودت اضافه بشه؛ الان جستجو با باز شدن مرورگر انجام می‌شود.</p>
+          <label>یوزرنیم لینکدین</label>
+          <input type="text" id="linkedinUser" placeholder="یوزرنیم/ایمیل لینکدین" />
+          <input type="password" id="linkedinPass" placeholder="رمز عبور" />
+          <button id="saveLinkedinBtn" class="secondary-btn">ذخیره</button>
+          <label style="margin-top:14px;">یوزرنیم اینستاگرام</label>
+          <input type="text" id="instagramUser" placeholder="یوزرنیم اینستاگرام" />
+          <input type="password" id="instagramPass" placeholder="رمز عبور" />
+          <button id="saveInstagramBtn" class="secondary-btn">ذخیره</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>لیست شرکت‌های پیمانکاری بزرگ تهران (شخصی، قابل ویرایش)</h3>
+          <div class="list-add-row">
+            <input type="text" id="newCompanyName" placeholder="نام شرکت" />
+            <input type="text" id="newCompanyUrl" placeholder="آدرس وب‌سایت" />
+            <button id="addCompanyBtn" class="secondary-btn">افزودن</button>
+          </div>
+          <div id="companiesList" class="editable-list"></div>
+        </div>
+
+        <div class="settings-card">
+          <h3>کارفرمایان دولتی خاص (شخصی، قابل ویرایش)</h3>
+          <div class="list-add-row">
+            <input type="text" id="newGovName" placeholder="نام کارفرما" />
+            <input type="text" id="newGovUrl" placeholder="آدرس وب‌سایت" />
+            <button id="addGovBtn" class="secondary-btn">افزودن</button>
+          </div>
+          <div id="govList" class="editable-list"></div>
+        </div>
+
+        <div class="settings-card">
+          <h3>تغییر کد ایمنی</h3>
+          <input type="password" id="newPin" placeholder="کد ایمنی جدید" />
+          <button id="savePinBtn" class="secondary-btn">ذخیره کد ایمنی</button>
+        </div>
+
+        <div class="settings-card">
+          <h3>سایت‌های هدف</h3>
+          <pre id="sitesPreview" class="sites-preview"></pre>
+        </div>
+      </section>
+    </main>
+
+    <div class="about-badge" id="aboutBadge">ⓘ درباره</div>
+    <div class="about-popover hidden" id="aboutPopover">
+      <p id="aboutText"></p>
+      <div class="about-meta">
+        <span id="footerNationalId"></span>
+        <span>نسخه <span id="footerVersion"></span></span>
+        <span id="footerDate"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
