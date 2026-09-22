@@ -10,6 +10,9 @@ let customCompanies = [];
 let govEmployers = [];
 // وضعیت چک‌باکس‌های منبع جستجو - پیش‌فرض همه سایت‌های داخلی فعال، لیست‌های شخصی غیرفعال
 let sourceSelection = { builtin: {}, companies: {}, gov: {} };
+// فیلترهای پیشرفته سازه جو / آرتا پارسیان مازندران (چندگانه، قابل ذخیره)
+let sazejooFilters = { zones: new Set(), structureTypes: new Set(), stages: new Set() };
+let artaFilters = { cities: new Set(), structureTypes: new Set(), stages: new Set() };
 
 // ---------------- قفل امنیتی ----------------
 async function initLock() {
@@ -42,6 +45,11 @@ async function unlockApp() {
   document.getElementById('settingInstagram').value = currentSettings.instagram || '';
   document.getElementById('settingLinkedin').value = currentSettings.linkedin || '';
   document.getElementById('settingNationalId').value = currentSettings.nationalId || '';
+  document.getElementById('settingCompanyName').value = currentSettings.companyName || '';
+  document.getElementById('settingSenderName').value = currentSettings.senderName || '';
+  document.getElementById('settingSenderPhone').value = currentSettings.senderPhone || '';
+  document.getElementById('settingIntroText').value = currentSettings.introText || '';
+  updateCatalogStatus();
 
   document.getElementById('messageTemplate').value = localStorage.getItem('messageTemplate') || DEFAULT_MESSAGE;
   document.getElementById('outreachMessage').value = localStorage.getItem('messageTemplate') || DEFAULT_MESSAGE;
@@ -72,45 +80,54 @@ async function unlockApp() {
   const searchOptions = await window.api.searchOptions.get();
   document.getElementById('freeKeyword').value = searchOptions.keyword || '';
   if (searchOptions.dateFrom) {
-    document.getElementById('dateFromDay').value = searchOptions.dateFrom.d || '';
     document.getElementById('dateFromMonth').value = searchOptions.dateFrom.m || '';
-    document.getElementById('dateFromYear').value = to2DigitYear(searchOptions.dateFrom.y);
+    document.getElementById('dateFromYear').value = to2DigitYear(searchOptions.dateFrom.y) || to2DigitYear(SUPPORTED_YEARS[0]);
+    updateDayOptions('dateFromDay', 'dateFromMonth', 'dateFromYear');
+    document.getElementById('dateFromDay').value = searchOptions.dateFrom.d || '';
   }
   if (searchOptions.dateTo) {
-    document.getElementById('dateToDay').value = searchOptions.dateTo.d || '';
     document.getElementById('dateToMonth').value = searchOptions.dateTo.m || '';
-    document.getElementById('dateToYear').value = to2DigitYear(searchOptions.dateTo.y);
+    document.getElementById('dateToYear').value = to2DigitYear(searchOptions.dateTo.y) || to2DigitYear(SUPPORTED_YEARS[0]);
+    updateDayOptions('dateToDay', 'dateToMonth', 'dateToYear');
+    document.getElementById('dateToDay').value = searchOptions.dateTo.d || '';
   }
-  document.getElementById('sazejooZone').value = searchOptions.sazejooZone || '';
   document.getElementById('setadiranCity').value = searchOptions.setadiranCity || '';
   document.getElementById('setadiranTenderNumber').value = searchOptions.setadiranTenderNumber || '';
   document.getElementById('setadiranEmployer').value = searchOptions.setadiranEmployer || '';
   document.getElementById('irantenderEmployer').value = searchOptions.irantenderEmployer || '';
 
   siteConfig = await window.api.config.getSites();
-  populateZoneDropdown();
+
+  // بازیابی فیلترهای پیشرفته سازه جو/آرتا که قبلاً ذخیره شده
+  if (searchOptions.sazejooFilters) {
+    sazejooFilters.zones = new Set(searchOptions.sazejooFilters.zones || []);
+    sazejooFilters.structureTypes = new Set(searchOptions.sazejooFilters.structureTypes || []);
+    sazejooFilters.stages = new Set(searchOptions.sazejooFilters.stages || []);
+    document.getElementById('sazejooFloorsBelow').value = searchOptions.sazejooFilters.floorsBelow || '';
+    document.getElementById('sazejooFloorsTotal').value = searchOptions.sazejooFilters.floorsTotal || '';
+  }
+  if (searchOptions.artaFilters) {
+    artaFilters.cities = new Set(searchOptions.artaFilters.cities || []);
+    artaFilters.structureTypes = new Set(searchOptions.artaFilters.structureTypes || []);
+    artaFilters.stages = new Set(searchOptions.artaFilters.stages || []);
+    document.getElementById('artaFloorsBelow').value = searchOptions.artaFilters.floorsBelow || '';
+    document.getElementById('artaFloorsTotal').value = searchOptions.artaFilters.floorsTotal || '';
+  }
+  renderSazejooFilters();
+  renderArtaFilters();
 
   customCompanies = await window.api.companies.get();
   govEmployers = await window.api.govEmployers.get();
 
   siteConfig.sites.filter(s => s.scraperModule).forEach(s => { sourceSelection.builtin[s.id] = true; });
-  renderSourcesList();
+  renderSourceChips(); renderEmployerChips();
   renderCompaniesList();
   renderGovList();
 
   await loadLeads();
   loadSitesPreview();
   renderFooter();
-}
-
-function populateZoneDropdown() {
-  const select = document.getElementById('sazejooZone');
-  (siteConfig.tehranMunicipalZones || []).forEach(zone => {
-    const opt = document.createElement('option');
-    opt.value = zone;
-    opt.textContent = `منطقه ${zone}`;
-    select.appendChild(opt);
-  });
+  renderQuickOutreachPreview();
 }
 
 // ---------------- تب‌ها ----------------
@@ -154,6 +171,7 @@ function renderLeads() {
       </div>
       <div class="lead-title">${lead.title || '-'}</div>
       ${lead.tenderNumber ? `<div class="lead-meta">شماره فراخوان: ${lead.tenderNumber}</div>` : ''}
+      ${lead.accessStatus ? `<div class="lead-access-status">${lead.accessStatus}</div>` : ''}
       <div class="lead-meta">${lead.address || '-'}</div>
       <div class="lead-meta">${lead.employer || ''}</div>
       <div class="lead-card-actions"></div>
@@ -177,53 +195,166 @@ function renderLeads() {
 
 document.getElementById('filterPriority').addEventListener('change', renderLeads);
 
-// ---------------- منابع جستجو (چک‌باکس‌ها + دکمه تکی/کلی) ----------------
-function renderSourcesList() {
-  const container = document.getElementById('sourcesList');
+// ---------------- منابع جستجو (چیپ‌های قابل‌کلیک + اجرای تکی/کلی) ----------------
+function renderSourceChips() {
+  const container = document.getElementById('sourceChips');
   container.innerHTML = '';
 
   siteConfig.sites.filter(s => s.scraperModule).forEach(site => {
-    const row = document.createElement('div');
-    row.className = 'source-row';
-    row.innerHTML = `
-      <label><input type="checkbox" data-type="builtin" data-id="${site.id}" ${sourceSelection.builtin[site.id] ? 'checked' : ''}/> ${site.name}</label>
-      <div class="source-row-actions"><button class="secondary-btn" data-run-single="builtin:${site.id}">فقط همین</button></div>
-    `;
-    container.appendChild(row);
-  });
-
-  customCompanies.forEach(c => {
-    const row = document.createElement('div');
-    row.className = 'source-row';
-    row.innerHTML = `
-      <label><input type="checkbox" data-type="companies" data-id="${c.id}" ${sourceSelection.companies[c.id] ? 'checked' : ''}/> ${c.name}</label>
-      <div class="source-row-actions"><button class="secondary-btn" data-run-single="companies:${c.id}">فقط همین</button></div>
-    `;
-    container.appendChild(row);
-  });
-
-  govEmployers.forEach(g => {
-    const row = document.createElement('div');
-    row.className = 'source-row';
-    row.innerHTML = `
-      <label><input type="checkbox" data-type="gov" data-id="${g.id}" ${sourceSelection.gov[g.id] ? 'checked' : ''}/> ${g.name} (دولتی)</label>
-      <div class="source-row-actions"><button class="secondary-btn" data-run-single="gov:${g.id}">فقط همین</button></div>
-    `;
-    container.appendChild(row);
-  });
-
-  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      sourceSelection[cb.dataset.type][cb.dataset.id] = cb.checked;
+    const chip = document.createElement('div');
+    chip.className = 'source-chip' + (sourceSelection.builtin[site.id] ? ' active' : '');
+    chip.innerHTML = `<span>${site.name}</span><button class="chip-run-btn" title="فقط همین" data-run-single="builtin:${site.id}">▶</button>`;
+    chip.addEventListener('click', (e) => {
+      if (e.target.closest('.chip-run-btn')) return;
+      sourceSelection.builtin[site.id] = !sourceSelection.builtin[site.id];
+      chip.classList.toggle('active');
     });
+    container.appendChild(chip);
   });
+
   container.querySelectorAll('[data-run-single]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const [type, id] = btn.dataset.runSingle.split(':');
       runScan(buildSingleSourceOpts(type, id));
     });
   });
 }
+
+// ---------------- کارفرمای ویژه (انتخاب سریع در صفحه اول) ----------------
+function renderEmployerChips() {
+  const container = document.getElementById('employerChips');
+  container.innerHTML = '';
+
+  if (!customCompanies.length && !govEmployers.length) {
+    container.innerHTML = '<p style="color:#9CA3AF;font-size:12px;">هنوز شرکت/کارفرمایی توی تنظیمات اضافه نکردی.</p>';
+    return;
+  }
+
+  customCompanies.forEach(c => {
+    const chip = document.createElement('div');
+    chip.className = 'source-chip' + (sourceSelection.companies[c.id] ? ' active' : '');
+    chip.innerHTML = `<span>${c.name}</span><button class="chip-run-btn" title="فقط همین" data-run-single="companies:${c.id}">▶</button>`;
+    chip.addEventListener('click', (e) => {
+      if (e.target.closest('.chip-run-btn')) return;
+      sourceSelection.companies[c.id] = !sourceSelection.companies[c.id];
+      chip.classList.toggle('active');
+    });
+    container.appendChild(chip);
+  });
+
+  govEmployers.forEach(g => {
+    const chip = document.createElement('div');
+    chip.className = 'source-chip gov' + (sourceSelection.gov[g.id] ? ' active' : '');
+    chip.innerHTML = `<span>${g.name} (دولتی)</span><button class="chip-run-btn" title="فقط همین" data-run-single="gov:${g.id}">▶</button>`;
+    chip.addEventListener('click', (e) => {
+      if (e.target.closest('.chip-run-btn')) return;
+      sourceSelection.gov[g.id] = !sourceSelection.gov[g.id];
+      chip.classList.toggle('active');
+    });
+    container.appendChild(chip);
+  });
+
+  container.querySelectorAll('[data-run-single]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const [type, id] = btn.dataset.runSingle.split(':');
+      runScan(buildSingleSourceOpts(type, id));
+    });
+  });
+}
+
+// ---------------- فیلترهای پیشرفته سازه جو ----------------
+function renderSazejooFilters() {
+  renderZoneChipList('sazejooZoneList', (siteConfig.tehranMunicipalZones || []).map(z => `منطقه ${z}`), sazejooFilters.zones, 'sazejooZoneSearch');
+  renderCheckboxChipList('sazejooStructureType', siteConfig.structureTypes || [], sazejooFilters.structureTypes);
+  renderCheckboxChipList('sazejooStage', siteConfig.constructionStages || [], sazejooFilters.stages);
+}
+
+// ---------------- فیلترهای پیشرفته آرتا پارسیان مازندران ----------------
+function renderArtaFilters() {
+  renderZoneChipList('artaCityList', siteConfig.mazandaranCities || [], artaFilters.cities, 'artaCitySearch');
+  renderCheckboxChipList('artaStructureType', siteConfig.structureTypes || [], artaFilters.structureTypes);
+  renderCheckboxChipList('artaStage', siteConfig.constructionStages || [], artaFilters.stages);
+  renderSelectedChips('artaCityChipsSelected', artaFilters.cities);
+}
+
+// لیست قابل‌جستجو + انتخاب چندگانه (برای مناطق تهران یا شهرهای مازندران)
+function renderZoneChipList(containerId, allItems, selectedSet, searchInputId) {
+  const container = document.getElementById(containerId);
+  const searchInput = document.getElementById(searchInputId);
+  const filterText = (searchInput.value || '').trim();
+
+  const filtered = filterText ? allItems.filter(item => item.includes(filterText)) : allItems;
+  container.innerHTML = filtered.map(item => `
+    <button type="button" class="zone-chip ${selectedSet.has(item) ? 'active' : ''}" data-item="${item}">${item}</button>
+  `).join('') || '<p style="color:#9CA3AF;font-size:12px;">موردی پیدا نشد - اگه شهر/منطقه دیگه‌ای می‌خوای، همینجا تایپ کن و Enter بزن</p>';
+
+  container.querySelectorAll('.zone-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const item = chip.dataset.item;
+      if (selectedSet.has(item)) selectedSet.delete(item); else selectedSet.add(item);
+      chip.classList.toggle('active');
+      if (containerId === 'artaCityList') renderSelectedChips('artaCityChipsSelected', artaFilters.cities);
+    });
+  });
+
+  // اگه کاربر چیزی تایپ کرد که توی لیست نیست (مثلاً منطقه/شهر جدید)، با Enter اضافه می‌شه
+  if (!searchInput.dataset.wired) {
+    searchInput.dataset.wired = '1';
+    searchInput.addEventListener('input', () => renderZoneChipList(containerId, allItems, selectedSet, searchInputId));
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && searchInput.value.trim()) {
+        selectedSet.add(searchInput.value.trim());
+        searchInput.value = '';
+        renderZoneChipList(containerId, allItems, selectedSet, searchInputId);
+        if (containerId === 'artaCityList') renderSelectedChips('artaCityChipsSelected', artaFilters.cities);
+      }
+    });
+  }
+}
+
+function renderSelectedChips(containerId, selectedSet) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = Array.from(selectedSet).map(item => `
+    <span class="selected-chip">${item} <button type="button" data-remove="${item}">✕</button></span>
+  `).join('');
+  el.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedSet.delete(btn.dataset.remove);
+      renderArtaFilters();
+    });
+  });
+}
+
+// چک‌باکس‌های چندگانه (نوع سازه / مرحله پروژه)
+function renderCheckboxChipList(containerId, options, selectedSet) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = options.map(opt => `
+    <label class="checkbox-chip"><input type="checkbox" data-opt="${opt}" ${selectedSet.has(opt) ? 'checked' : ''}/> ${opt}</label>
+  `).join('');
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedSet.add(cb.dataset.opt); else selectedSet.delete(cb.dataset.opt);
+    });
+  });
+}
+
+document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+  document.getElementById('freeKeyword').value = '';
+  ['dateFromMonth', 'dateFromYear', 'dateToMonth', 'dateToYear'].forEach(id => { document.getElementById(id).value = ''; });
+  updateDayOptions('dateFromDay', 'dateFromMonth', 'dateFromYear');
+  updateDayOptions('dateToDay', 'dateToMonth', 'dateToYear');
+  sazejooFilters = { zones: new Set(), structureTypes: new Set(), stages: new Set() };
+  artaFilters = { cities: new Set(), structureTypes: new Set(), stages: new Set() };
+  document.getElementById('sazejooFloorsBelow').value = '';
+  document.getElementById('sazejooFloorsTotal').value = '';
+  document.getElementById('artaFloorsBelow').value = '';
+  document.getElementById('artaFloorsTotal').value = '';
+  renderSazejooFilters();
+  renderArtaFilters();
+});
 
 function buildSingleSourceOpts(type, id) {
   const base = getSearchOptsFromForm();
@@ -244,7 +375,21 @@ function getSearchOptsFromForm() {
   return {
     keyword: document.getElementById('freeKeyword').value.trim(),
     dateFrom: shamsiField('dateFromDay', 'dateFromMonth', 'dateFromYear'),
-    dateTo: shamsiField('dateToDay', 'dateToMonth', 'dateToYear')
+    dateTo: shamsiField('dateToDay', 'dateToMonth', 'dateToYear'),
+    sazejooFilters: {
+      zones: Array.from(sazejooFilters.zones),
+      structureTypes: Array.from(sazejooFilters.structureTypes),
+      stages: Array.from(sazejooFilters.stages),
+      floorsBelow: document.getElementById('sazejooFloorsBelow').value || null,
+      floorsTotal: document.getElementById('sazejooFloorsTotal').value || null
+    },
+    artaFilters: {
+      cities: Array.from(artaFilters.cities),
+      structureTypes: Array.from(artaFilters.structureTypes),
+      stages: Array.from(artaFilters.stages),
+      floorsBelow: document.getElementById('artaFloorsBelow').value || null,
+      floorsTotal: document.getElementById('artaFloorsTotal').value || null
+    }
   };
 }
 
@@ -256,33 +401,56 @@ function to2DigitYear(fullYear) {
 
 const PERSIAN_MONTHS = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
 
-// دراپ‌داون‌های روز/ماه/سال را می‌سازد - روز و سال به‌صورت اسکرول انتخاب می‌شوند (نه تایپی)
+// سال‌های کبیسه شمسی (اسفند ۳۰ روزه) - فعلاً فقط بازه پشتیبانی‌شده (۱۴۰۵/۱۴۰۶)،
+// هر دو عادی‌اند (اسفند ۲۹ روزه). وقتی سال جدید به SUPPORTED_YEARS اضافه شد،
+// اگه کبیسه بود همینجا به این آرایه اضافه کن.
+const PERSIAN_LEAP_YEARS = []; // مثلاً [1403, 1407, ...]
+const SUPPORTED_YEARS = [1405, 1406]; // طبق درخواست - فعلاً فقط این دو سال
+
+function daysInPersianMonth(month, fullYear) {
+  if (!month) return 31;
+  const m = Number(month);
+  if (m <= 6) return 31;
+  if (m <= 11) return 30;
+  return PERSIAN_LEAP_YEARS.includes(fullYear) ? 30 : 29; // اسفند
+}
+
+// دراپ‌داون‌های روز/ماه/سال را می‌سازد. سال فقط دو رقم آخر (۰۵/۰۶) با پیش‌فرض ۰۵ -
+// پیشوند «۱۴» به‌صورت ثابت در HTML کنارش نوشته شده، نه بخشی از انتخاب.
+// روز به تعداد واقعی روزهای همون ماه/سال محدود می‌شه (با منطق اسفند/کبیسه).
 function populateDateSelects() {
-  const daySelects = ['dateFromDay', 'dateToDay'];
-  const monthSelects = ['dateFromMonth', 'dateToMonth'];
-  const yearSelects = ['dateFromYear', 'dateToYear'];
+  const pairs = [['dateFromDay', 'dateFromMonth', 'dateFromYear'], ['dateToDay', 'dateToMonth', 'dateToYear']];
 
-  daySelects.forEach(id => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '<option value="">روز</option>' +
-      Array.from({ length: 31 }, (_, i) => i + 1).map(d => `<option value="${d}">${d}</option>`).join('');
-  });
-
-  monthSelects.forEach(id => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '<option value="">ماه</option>' +
+  pairs.forEach(([dayId, monthId, yearId]) => {
+    const monthSel = document.getElementById(monthId);
+    monthSel.innerHTML = '<option value="">ماه</option>' +
       PERSIAN_MONTHS.map((name, i) => `<option value="${i + 1}">${name}</option>`).join('');
-  });
 
-  // فقط دو رقم آخر سال شمسی (00 تا 20، یعنی 1400 تا 1420) - دیگه لازم نیست هربار «14» رو تایپ کنی
-  yearSelects.forEach(id => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '<option value="">سال</option>' +
-      Array.from({ length: 21 }, (_, i) => i).map(y => {
-        const yy = String(y).padStart(2, '0');
-        return `<option value="${yy}">${yy}</option>`;
-      }).join('');
+    const yearSel = document.getElementById(yearId);
+    yearSel.innerHTML = SUPPORTED_YEARS.map(y => {
+      const yy = to2DigitYear(y);
+      return `<option value="${yy}">${yy}</option>`;
+    }).join('');
+    yearSel.value = to2DigitYear(SUPPORTED_YEARS[0]); // پیش‌فرض ۰۵
+
+    updateDayOptions(dayId, monthId, yearId);
+    monthSel.addEventListener('change', () => updateDayOptions(dayId, monthId, yearId));
+    yearSel.addEventListener('change', () => updateDayOptions(dayId, monthId, yearId));
   });
+}
+
+// وقتی ماه یا سال عوض بشه، تعداد روزهای قابل‌انتخاب رو دوباره می‌سازه (نه بیشتر از تعداد واقعی روزهای اون ماه)
+function updateDayOptions(dayId, monthId, yearId) {
+  const daySel = document.getElementById(dayId);
+  const currentValue = daySel.value;
+  const month = document.getElementById(monthId).value;
+  const yy = document.getElementById(yearId).value;
+  const fullYear = yy ? 1400 + Number(yy) : SUPPORTED_YEARS[0];
+  const maxDay = daysInPersianMonth(month, fullYear);
+
+  daySel.innerHTML = '<option value="">روز</option>' +
+    Array.from({ length: maxDay }, (_, i) => i + 1).map(d => `<option value="${d}">${d}</option>`).join('');
+  if (currentValue && Number(currentValue) <= maxDay) daySel.value = currentValue;
 }
 
 // دکمه «امروز» - هر دو بازه (از/تا) رو با تاریخ شمسی امروز پر می‌کنه، با یک کلیک
@@ -295,12 +463,13 @@ document.getElementById('dateTodayBtn').addEventListener('click', () => {
   const d = todayParts.find(p => p.type === 'day').value;
   const yy = String(Number(y) % 100).padStart(2, '0');
 
-  document.getElementById('dateFromDay').value = d;
-  document.getElementById('dateFromMonth').value = m;
-  document.getElementById('dateFromYear').value = yy;
-  document.getElementById('dateToDay').value = d;
-  document.getElementById('dateToMonth').value = m;
-  document.getElementById('dateToYear').value = yy;
+  [['dateFromDay', 'dateFromMonth', 'dateFromYear'], ['dateToDay', 'dateToMonth', 'dateToYear']].forEach(([dayId, monthId, yearId]) => {
+    // اول ماه و سال، بعد بازسازی لیست روزها، بعد مقدار روز - وگرنه روز ممکنه هنوز توی لیست قدیمی نباشه
+    document.getElementById(monthId).value = m;
+    document.getElementById(yearId).value = yy;
+    updateDayOptions(dayId, monthId, yearId);
+    document.getElementById(dayId).value = d;
+  });
 });
 
 document.getElementById('runScanBtn').addEventListener('click', () => {
@@ -316,12 +485,13 @@ document.getElementById('runScanBtn').addEventListener('click', () => {
 });
 
 async function runScan(opts) {
-  // ذخیره کلیدواژه/بازه تاریخ برای دفعه بعد
+  // ذخیره کلیدواژه/بازه تاریخ/فیلترهای پیشرفته برای دفعه بعد
   await window.api.searchOptions.save({
     keyword: opts.keyword,
     dateFrom: opts.dateFrom,
     dateTo: opts.dateTo,
-    sazejooZone: document.getElementById('sazejooZone').value,
+    sazejooFilters: opts.sazejooFilters,
+    artaFilters: opts.artaFilters,
     setadiranCity: document.getElementById('setadiranCity').value,
     setadiranTenderNumber: document.getElementById('setadiranTenderNumber').value,
     setadiranEmployer: document.getElementById('setadiranEmployer').value,
@@ -455,6 +625,49 @@ function renderOutreachLinksPreview() {
   el.innerHTML = lines.join('<br>') || 'لینک‌ها را در تب تنظیمات وارد کنید.';
 }
 
+// ---------------- ارتباط سریع با کارفرما (پنل واتساپ/بله در داشبورد) ----------------
+function buildQuickOutreachMessage() {
+  const includeText = document.getElementById('includeText').checked;
+  const includeWebsite = document.getElementById('includeWebsite').checked;
+  const includeInstagram = document.getElementById('includeInstagram').checked;
+  const includeCatalog = document.getElementById('includeCatalog').checked;
+
+  const lines = ['سلام وقت بخیر'];
+  if (includeText && currentSettings.introText) lines.push(currentSettings.introText);
+  lines.push('');
+  if (includeWebsite && currentSettings.website) lines.push(`وب‌سایت: ${currentSettings.website}`);
+  if (includeInstagram && currentSettings.instagram) lines.push(`اینستاگرام: ${currentSettings.instagram}`);
+  // توجه: چون کاتالوگ یک فایل محلی روی سیستم شماست (نه لینک اینترنتی)، اینجا فقط
+  // به کاربر یادآوری می‌کنیم که قبل از ارسال، فایل رو دستی توی واتساپ/بله ضمیمه کنه.
+  if (includeCatalog && currentSettings.catalogPath) lines.push('(کاتالوگ رو دستی به همین پیام ضمیمه کنید - لینک اینترنتی برای فایل محلی وجود نداره)');
+  lines.push('');
+  lines.push('با احترام');
+  const signOff = [currentSettings.companyName, currentSettings.senderName].filter(Boolean).join(' - ');
+  if (signOff) lines.push(signOff);
+
+  return lines.join('\n');
+}
+
+function renderQuickOutreachPreview() {
+  document.getElementById('quickOutreachPreview').textContent = buildQuickOutreachMessage();
+}
+
+['includeText', 'includeWebsite', 'includeInstagram', 'includeCatalog'].forEach(id => {
+  document.getElementById(id).addEventListener('change', renderQuickOutreachPreview);
+});
+
+document.getElementById('quickWaBtn').addEventListener('click', () => {
+  const phone = document.getElementById('quickOutreachPhone').value.trim();
+  if (!phone) { alert('اول شماره تماس کارفرما رو وارد کن.'); return; }
+  window.api.outreach.openWhatsApp(phone, buildQuickOutreachMessage());
+});
+
+document.getElementById('quickBaleBtn').addEventListener('click', () => {
+  const phone = document.getElementById('quickOutreachPhone').value.trim();
+  if (!phone) { alert('اول شماره تماس کارفرما رو وارد کن.'); return; }
+  window.api.outreach.openBale(phone, buildQuickOutreachMessage());
+});
+
 document.getElementById('outreachCopyBtn').addEventListener('click', async () => {
   const text = document.getElementById('outreachMessage').value;
   await navigator.clipboard.writeText(text);
@@ -479,6 +692,7 @@ document.getElementById('outreachBaleBtn').addEventListener('click', () => {
 // ---------------- تنظیمات ----------------
 document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
   currentSettings = {
+    ...currentSettings,
     website: document.getElementById('settingWebsite').value.trim(),
     instagram: document.getElementById('settingInstagram').value.trim(),
     linkedin: document.getElementById('settingLinkedin').value.trim(),
@@ -488,6 +702,45 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   renderFooter();
   renderOutreachLinksPreview();
   alert('تنظیمات ذخیره شد.');
+});
+
+let selectedCatalogPath = '';
+document.getElementById('settingCatalogFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file && file.path) {
+    selectedCatalogPath = file.path;
+    document.getElementById('catalogStatus').textContent = `فایل انتخاب‌شده: ${file.name}`;
+  }
+});
+
+document.getElementById('saveBusinessInfoBtn').addEventListener('click', async () => {
+  currentSettings = {
+    ...currentSettings,
+    companyName: document.getElementById('settingCompanyName').value.trim(),
+    senderName: document.getElementById('settingSenderName').value.trim(),
+    senderPhone: document.getElementById('settingSenderPhone').value.trim(),
+    introText: document.getElementById('settingIntroText').value.trim(),
+    catalogPath: selectedCatalogPath || currentSettings.catalogPath || ''
+  };
+  await window.api.settings.save(currentSettings);
+  updateCatalogStatus();
+  alert('اطلاعات کسب‌وکار ذخیره شد.');
+});
+
+function updateCatalogStatus() {
+  const statusEl = document.getElementById('catalogStatus');
+  const openBtn = document.getElementById('openCatalogFolderBtn');
+  if (currentSettings.catalogPath) {
+    statusEl.textContent = `کاتالوگ ذخیره‌شده: ${currentSettings.catalogPath}`;
+    openBtn.classList.remove('hidden');
+  } else {
+    statusEl.textContent = 'هنوز کاتالوگی آپلود نشده.';
+    openBtn.classList.add('hidden');
+  }
+}
+
+document.getElementById('openCatalogFolderBtn').addEventListener('click', () => {
+  if (currentSettings.catalogPath) window.api.catalog.openFolder(currentSettings.catalogPath);
 });
 
 document.getElementById('saveMessageBtn').addEventListener('click', () => {
@@ -534,7 +787,6 @@ document.getElementById('saveAdvancedFiltersBtn').addEventListener('click', asyn
   const current = await window.api.searchOptions.get();
   await window.api.searchOptions.save({
     ...current,
-    sazejooZone: document.getElementById('sazejooZone').value,
     setadiranCity: document.getElementById('setadiranCity').value,
     setadiranTenderNumber: document.getElementById('setadiranTenderNumber').value,
     setadiranEmployer: document.getElementById('setadiranEmployer').value,
@@ -570,7 +822,7 @@ function renderCompaniesList() {
       customCompanies = customCompanies.filter(c => c.id !== btn.dataset.removeCompany);
       await window.api.companies.save(customCompanies);
       renderCompaniesList();
-      renderSourcesList();
+      renderSourceChips(); renderEmployerChips();
     });
   });
 }
@@ -584,7 +836,7 @@ document.getElementById('addCompanyBtn').addEventListener('click', async () => {
   document.getElementById('newCompanyName').value = '';
   document.getElementById('newCompanyUrl').value = '';
   renderCompaniesList();
-  renderSourcesList();
+  renderSourceChips(); renderEmployerChips();
 });
 
 // ---------------- لیست شخصی کارفرمایان دولتی ----------------
@@ -602,7 +854,7 @@ function renderGovList() {
       govEmployers = govEmployers.filter(g => g.id !== btn.dataset.removeGov);
       await window.api.govEmployers.save(govEmployers);
       renderGovList();
-      renderSourcesList();
+      renderSourceChips(); renderEmployerChips();
     });
   });
 }
@@ -616,7 +868,7 @@ document.getElementById('addGovBtn').addEventListener('click', async () => {
   document.getElementById('newGovName').value = '';
   document.getElementById('newGovUrl').value = '';
   renderGovList();
-  renderSourcesList();
+  renderSourceChips(); renderEmployerChips();
 });
 
 // ---------------- درباره: کپی‌رایت، کد ملی جزئی، نسخه، تاریخ شمسی ----------------

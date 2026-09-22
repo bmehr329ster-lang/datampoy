@@ -1,27 +1,33 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #F3F5FA;
+  --bg: #F2F4F7;
   --card: #FFFFFF;
-  --accent: #14B8A6;
-  --accent-dark: #0D9488;
-  --accent-soft: #E6FBF8;
-  --text: #1F2430;
-  --text-dim: #6B7280;
-  --border: #E7E9F0;
-  --p1: #FB923C;
-  --p1-soft: #FFF1E3;
-  --p2: #3B82F6;
-  --p2-soft: #E9F1FF;
-  --p3: #9CA3AF;
+  --accent: #0E4C6B;       /* آبی نفتی/تیره - رنگ اصلی مهندسی */
+  --accent-dark: #0A3A52;
+  --accent-soft: #E6EEF2;
+  --text: #1C2530;
+  --text-dim: #64748B;      /* خاکستری مهندسی */
+  --border: #E2E6EC;
+  --success: #16A34A;       /* سبز ملایم برای وضعیت موفق */
+  --success-soft: #E9F8EF;
+  --warn: #EA580C;          /* نارنجی محدود برای هشدار/اقدام */
+  --warn-soft: #FFF1E8;
+  --p1: #EA580C;
+  --p1-soft: #FFF1E8;
+  --p2: #0E4C6B;
+  --p2-soft: #E6EEF2;
+  --p3: #64748B;
   --p3-soft: #F1F2F5;
+  --p4: #7C3AED;
+  --p4-soft: #F3E8FF;
   --radius: 16px;
-  --shadow: 0 4px 20px rgba(31, 36, 48, 0.06);
+  --shadow: 0 4px 20px rgba(28, 37, 48, 0.07);
 }
 
 body {
   font-family: 'Vazirmatn', Tahoma, sans-serif;
-  background: linear-gradient(180deg, #F6F0FA 0%, #F3F5FA 220px);
+  background: linear-gradient(180deg, #EDF1F5 0%, #F2F4F7 220px);
   color: var(--text);
 }
 .hidden { display: none !important; }
@@ -123,6 +129,7 @@ label { display: block; font-size: 12px; color: var(--text-dim); margin: 10px 0 
 .p2 { background: var(--p2-soft); color: var(--p2); }
 .p3 { background: var(--p3-soft); color: var(--p3); }
 .p4 { background: #F3E8FF; color: #9333EA; }
+.lead-access-status { font-size: 11px; color: var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 4px 8px; }
 .lead-card-actions { display: flex; gap: 8px; margin-top: 4px; }
 
 .scan-log {
@@ -198,6 +205,59 @@ label { display: block; font-size: 12px; color: var(--text-dim); margin: 10px 0 
 .source-row-actions button { font-size: 11px; padding: 5px 10px; margin: 0; }
 .external-search-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .hint-text { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; }
+
+/* --- Source chips (منابع جستجو / کارفرمای ویژه) --- */
+.source-chips, .employer-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.source-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card); border: 1.5px solid var(--border); border-radius: 20px;
+  padding: 8px 8px 8px 16px; font-size: 13px; cursor: pointer; transition: all .15s;
+}
+.source-chip:hover { border-color: var(--accent); }
+.source-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.source-chip.gov.active { background: var(--warn); border-color: var(--warn); }
+.chip-run-btn {
+  background: rgba(0,0,0,0.06); border: none; border-radius: 50%; width: 22px; height: 22px;
+  font-size: 10px; cursor: pointer; color: inherit;
+}
+.source-chip.active .chip-run-btn { background: rgba(255,255,255,0.25); }
+
+/* --- Zone / city searchable multi-select (سازه جو مناطق، آرتا شهرها) --- */
+.filter-search-input { width: 100%; margin-bottom: 8px; }
+.zone-chip-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 160px; overflow-y: auto; margin-bottom: 10px; }
+.zone-chip {
+  background: #FAFBFD; border: 1px solid var(--border); border-radius: 14px;
+  padding: 5px 12px; font-size: 12px; cursor: pointer;
+}
+.zone-chip.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-dark); font-weight: 700; }
+.selected-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.selected-chip {
+  background: var(--accent-soft); color: var(--accent-dark); border-radius: 14px;
+  padding: 4px 6px 4px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px;
+}
+.selected-chip button { background: none; border: none; cursor: pointer; color: inherit; font-size: 11px; }
+
+/* --- Checkbox chips (نوع سازه / مرحله پروژه) --- */
+.checkbox-chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.checkbox-chip {
+  background: #FAFBFD; border: 1px solid var(--border); border-radius: 10px;
+  padding: 6px 10px; font-size: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+
+.floors-row { display: flex; gap: 12px; }
+.floors-row > div { flex: 1; }
+.floors-row input { width: 100%; }
+
+.year-fixed-prefix { color: var(--text-dim); font-size: 13px; font-weight: 700; }
+
+/* --- Quick outreach panel (ارتباط سریع با کارفرما در داشبورد) --- */
+.outreach-quick-card { border-right: 3px solid var(--success); }
+.outreach-checkboxes { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; margin: 10px 0; }
+.outreach-checkboxes label { display: flex; align-items: center; gap: 6px; }
+.outreach-preview {
+  background: #FAFBFD; border: 1px dashed var(--border); border-radius: 10px;
+  padding: 12px; font-size: 12px; white-space: pre-wrap; color: var(--text-dim); margin-bottom: 12px; min-height: 60px;
+}
 
 /* --- Editable list (companies / gov employers) --- */
 .list-add-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }

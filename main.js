@@ -105,6 +105,11 @@ ipcMain.handle('search:openInstagram', (event, keyword) => {
   shell.openExternal(`https://www.instagram.com/explore/tags/${encodeURIComponent(keyword.replace(/\s+/g, ''))}/`);
 });
 
+// ---------- باز کردن پوشه کاتالوگ در File Explorer ----------
+ipcMain.handle('catalog:openFolder', (event, filePath) => {
+  if (filePath) shell.showItemInFolder(filePath);
+});
+
 ipcMain.handle('config:getSites', () => {
   return require('./src/config/sites.json');
 });
@@ -151,7 +156,12 @@ ipcMain.handle('settings:get', () => {
     website: '',
     instagram: '',
     linkedin: '',
-    nationalId: ''
+    nationalId: '',
+    companyName: '',
+    senderName: '',
+    senderPhone: '',
+    introText: '',
+    catalogPath: ''
   });
 });
 

@@ -36,6 +36,7 @@ class IranTenderScraper {
     // اگر یوزر/پسورد ذخیره شده، اول لاگین می‌کنیم تا نتایج «قابل نمایش برای مشترکان»
     // هم به‌جای پیام قفل‌شده، اطلاعات واقعی نشان بدهند.
     const cookieHeader = await this.login(client);
+    const isLoggedIn = !!cookieHeader;
     if (cookieHeader) {
       client.defaults.headers.Cookie = cookieHeader;
     }
@@ -62,6 +63,17 @@ class IranTenderScraper {
         r.site = this.siteMeta.name;
         r.foundAt = new Date().toISOString();
         r.id = `irantender-${r.tenderCode || Buffer.from(r.title).toString('base64').slice(0, 16)}`;
+
+        // به‌جای نمایش گمراه‌کننده متن خام سایت («قابل نمایش برای مشترکان»)،
+        // وضعیت واقعی دسترسی رو شفاف مشخص می‌کنیم.
+        const gated = /مشترک/.test(r.employer || '') || /مشترک/.test(r.rawText || '');
+        if (gated) {
+          r.accessStatus = isLoggedIn
+            ? 'حساب ایران تندر متصل است، اما دسترسی به این مورد توسط سایت منبع محدود شده است.'
+            : 'برای مشاهده جزئیات این مورد، اتصال حساب ایران تندر (یوزر/پسورد در تنظیمات) لازم است.';
+        } else if (isLoggedIn) {
+          r.accessStatus = 'حساب ایران تندر متصل است.';
+        }
       });
       leads.push(...rows);
     } catch (err) {

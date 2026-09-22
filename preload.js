@@ -46,6 +46,9 @@ contextBridge.exposeInMainWorld('api', {
     linkedin: (keyword) => ipcRenderer.invoke('search:openLinkedIn', keyword),
     instagram: (keyword) => ipcRenderer.invoke('search:openInstagram', keyword)
   },
+  catalog: {
+    openFolder: (filePath) => ipcRenderer.invoke('catalog:openFolder', filePath)
+  },
   app: {
     getVersion: () => ipcRenderer.invoke('app:getVersion')
   }

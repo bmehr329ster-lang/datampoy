@@ -64,23 +64,98 @@
             <span class="date-label">از تاریخ:</span>
             <select id="dateFromDay" class="date-select"></select>
             <select id="dateFromMonth" class="date-select-month"></select>
+            <span class="year-fixed-prefix">۱۴</span>
             <select id="dateFromYear" class="date-select-year"></select>
             <span class="date-label">تا تاریخ:</span>
             <select id="dateToDay" class="date-select"></select>
             <select id="dateToMonth" class="date-select-month"></select>
+            <span class="year-fixed-prefix">۱۴</span>
             <select id="dateToYear" class="date-select-year"></select>
             <button id="dateTodayBtn" class="secondary-btn" type="button">📅 امروز</button>
+            <button id="clearFiltersBtn" class="secondary-btn" type="button">🗑️ پاک کردن فیلترها</button>
           </div>
         </div>
 
         <div class="search-card">
           <h3>منابع جستجو</h3>
-          <div id="sourcesList" class="sources-list"></div>
+          <div id="sourceChips" class="source-chips"></div>
           <div class="external-search-row">
             <button id="linkedinSearchBtn" class="secondary-btn">🔗 جستجوی لینکدین</button>
             <button id="instagramSearchBtn" class="secondary-btn">📷 جستجوی اینستاگرام</button>
           </div>
-          <button id="runScanBtn" class="primary-btn" style="margin-top:12px;">🔍 جستجوی همه منابع انتخاب‌شده</button>
+          <button id="runScanBtn" class="primary-btn" style="margin-top:12px;">🔍 جستجوی فرصت‌ها</button>
+        </div>
+
+        <div class="search-card">
+          <h3>کارفرمای ویژه (انتخاب سریع)</h3>
+          <p class="hint-text">شرکت‌ها و کارفرمایان دولتی که در تنظیمات ثبت کردی، اینجا با یک کلیک قابل انتخاب برای جستجو هستن.</p>
+          <div id="employerChips" class="employer-chips"></div>
+        </div>
+
+        <div class="search-card" id="sazejooFiltersCard">
+          <h3>فیلترهای سازه جو</h3>
+          <label>منطقه شهرداری تهران</label>
+          <input type="text" id="sazejooZoneSearch" placeholder="جستجو یا تایپ منطقه..." class="filter-search-input" />
+          <div id="sazejooZoneList" class="zone-chip-list"></div>
+
+          <label>نوع سازه</label>
+          <div id="sazejooStructureType" class="checkbox-chip-list"></div>
+
+          <label>مرحله پروژه</label>
+          <div id="sazejooStage" class="checkbox-chip-list"></div>
+
+          <div class="floors-row">
+            <div>
+              <label>تعداد طبقات منفی</label>
+              <input type="number" id="sazejooFloorsBelow" min="0" placeholder="مثلاً 2" />
+            </div>
+            <div>
+              <label>تعداد کل طبقات</label>
+              <input type="number" id="sazejooFloorsTotal" min="0" placeholder="مثلاً 8" />
+            </div>
+          </div>
+        </div>
+
+        <div class="search-card" id="artaFiltersCard">
+          <h3>فیلترهای آرتا پارسیان مازندران</h3>
+          <label>شهر مازندران</label>
+          <input type="text" id="artaCitySearch" placeholder="جستجو، تایپ یا انتخاب شهر..." class="filter-search-input" />
+          <div id="artaCityList" class="zone-chip-list"></div>
+          <div id="artaCityChipsSelected" class="selected-chips"></div>
+
+          <label>نوع سازه</label>
+          <div id="artaStructureType" class="checkbox-chip-list"></div>
+
+          <label>مرحله پروژه</label>
+          <div id="artaStage" class="checkbox-chip-list"></div>
+
+          <div class="floors-row">
+            <div>
+              <label>تعداد طبقات منفی</label>
+              <input type="number" id="artaFloorsBelow" min="0" placeholder="مثلاً 2" />
+            </div>
+            <div>
+              <label>تعداد کل طبقات</label>
+              <input type="number" id="artaFloorsTotal" min="0" placeholder="مثلاً 8" />
+            </div>
+          </div>
+        </div>
+
+        <div class="search-card outreach-quick-card">
+          <h3>ارتباط سریع با کارفرما (واتساپ / بله)</h3>
+          <label>شماره تماس کارفرما</label>
+          <input type="text" id="quickOutreachPhone" placeholder="مثلاً 09121234567" />
+          <div class="outreach-checkboxes">
+            <label><input type="checkbox" id="includeText" checked /> متن معرفی</label>
+            <label><input type="checkbox" id="includeWebsite" checked /> آدرس وب‌سایت</label>
+            <label><input type="checkbox" id="includeInstagram" checked /> آدرس اینستاگرام</label>
+            <label><input type="checkbox" id="includeCatalog" /> لینک کاتالوگ</label>
+          </div>
+          <div id="quickOutreachPreview" class="outreach-preview"></div>
+          <div class="outreach-actions">
+            <button id="quickWaBtn" class="wa-btn">ارسال با واتساپ</button>
+            <button id="quickBaleBtn" class="bale-btn">ارسال با بله</button>
+          </div>
         </div>
 
         <div class="toolbar">
@@ -157,6 +232,23 @@
         </div>
 
         <div class="settings-card">
+          <h3>اطلاعات کسب‌وکار (برای پیام‌های کارفرما)</h3>
+          <label>نام شرکت</label>
+          <input type="text" id="settingCompanyName" placeholder="مثلاً شرکت پیمانکاری ..." />
+          <label>نام / عنوان فرستنده</label>
+          <input type="text" id="settingSenderName" placeholder="مثلاً برهان مهرگان" />
+          <label>شماره تماس شرکت</label>
+          <input type="text" id="settingSenderPhone" placeholder="مثلاً 09121234567" />
+          <label>متن پیش‌فرض معرفی</label>
+          <textarea id="settingIntroText" rows="4" placeholder="متنی که همراه پیام‌های کارفرما ارسال می‌شود"></textarea>
+          <label>کاتالوگ (PDF)</label>
+          <input type="file" id="settingCatalogFile" accept="application/pdf" />
+          <div id="catalogStatus" class="hint-text"></div>
+          <button id="openCatalogFolderBtn" class="secondary-btn hidden">📁 باز کردن پوشه کاتالوگ</button>
+          <button id="saveBusinessInfoBtn" class="primary-btn">ذخیره اطلاعات کسب‌وکار</button>
+        </div>
+
+        <div class="settings-card">
           <h3>قالب پیش‌فرض پیام کارفرما</h3>
           <textarea id="messageTemplate" rows="5"></textarea>
           <button id="saveMessageBtn" class="secondary-btn">ذخیره پیام</button>
@@ -185,10 +277,6 @@
 
         <div class="settings-card">
           <h3>فیلترهای پیشرفته سایت‌ها</h3>
-          <label>منطقه شهرداری تهران (سازه جو)</label>
-          <select id="sazejooZone">
-            <option value="">همه مناطق</option>
-          </select>
           <label>شهر (ستاد ایران)</label>
           <input type="text" id="setadiranCity" placeholder="مثلاً تهران" />
           <label>شماره فراخوان ستاد ایران (اگه از جای دیگه‌ای این شماره رو پیدا کردی)</label>
